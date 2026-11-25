@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Onlayn navbat</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#fbf6f4; --card:#ffffff; --ink:#2a2023; --muted:#8c7f84;
+  --brand:#c2185b; --brand-soft:#fde8f0; --line:#f0e4e8; --ok:#2e9e6b;
+  --radius:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+body{min-height:100vh;padding-bottom:110px}
+header{padding:18px 16px 12px;background:linear-gradient(160deg,#c2185b,#e8508a);color:#fff;
+  border-radius:0 0 24px 24px}
+header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.2px}
+header p{margin:2px 0 14px;font-size:13px;opacity:.9}
+.progress{display:flex;gap:6px}
+.progress i{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.35)}
+.progress i.on{background:#fff}
+main{padding:16px}
+h2{font-size:17px;margin:4px 0 12px}
+.cat{margin:18px 0 8px;font-size:12px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.8px}
+.item{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid transparent;
+  border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer;
+  box-shadow:0 1px 3px rgba(80,30,50,.06);transition:.15s}
+.item.sel{border-color:var(--brand);background:var(--brand-soft)}
+.item .info{flex:1;min-width:0}
+.item .name{font-weight:600;font-size:15px}
+.item .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.item .price{font-weight:700;font-size:14px;white-space:nowrap}
+.check{width:22px;height:22px;border-radius:50%;border:2px solid #d9c9cf;flex:none;
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px}
+.item.sel .check{background:var(--brand);border-color:var(--brand)}
+.avatar{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;
+  justify-content:center;font-weight:700;color:#fff;font-size:17px;
+  background:linear-gradient(135deg,#e8508a,#c2185b)}
+.avatar.any{background:linear-gradient(135deg,#9a8f94,#6f6368)}
+.dates{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 -16px;padding-left:16px;padding-right:16px;
+  scrollbar-width:none}
+.dates::-webkit-scrollbar{display:none}
+.date{flex:none;width:56px;padding:10px 0;text-align:center;background:var(--card);border-radius:14px;
+  border:2px solid transparent;cursor:pointer;box-shadow:0 1px 3px rgba(80,30,50,.06)}
+.date small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase}
+.date b{display:block;font-size:18px;margin:2px 0}
+.date.sel{background:var(--brand);color:#fff}
+.date.sel small{color:#fff;opacity:.85}
+.date.off{opacity:.35;pointer-events:none}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.slot{padding:11px 0;text-align:center;border-radius:12px;background:var(--card);font-weight:600;
+  font-size:14px;border:2px solid transparent;cursor:pointer;box-shadow:0 1px 3px rgba(80,30,50,.06)}
+.slot.sel{background:var(--brand);color:#fff}
+.slot.busy{opacity:.35;text-decoration:line-through;pointer-events:none;box-shadow:none}
+.empty{color:var(--muted);text-align:center;padding:24px 0;font-size:14px}
+label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+.field{width:100%;padding:14px;border-radius:12px;border:2px solid var(--line);background:#fff;
+  font-size:16px;color:var(--ink);outline:none}
+.field:focus{border-color:var(--brand)}
+.phone{display:flex;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px}
+.phone:focus-within{border-color:var(--brand)}
+.phone span{padding:0 0 0 14px;font-size:16px;font-weight:600}
+.phone input{border:0;flex:1;padding:14px 14px 14px 6px;font-size:16px;outline:none;background:transparent;color:var(--ink)}
+.summary{background:var(--card);border-radius:var(--radius);padding:14px;margin-top:18px;
+  box-shadow:0 1px 3px rgba(80,30,50,.06)}
+.summary .row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:14px;
+  border-bottom:1px dashed var(--line)}
+.summary .row:last-child{border-bottom:0}
+.summary .row span:first-child{color:var(--muted)}
+.summary .row span:last-child{text-align:right;font-weight:600}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  box-shadow:0 -4px 20px rgba(80,30,50,.10);border-radius:20px 20px 0 0;z-index:5}
+.bar .tot{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px;min-height:18px}
+.bar .tot b{color:var(--ink);font-size:15px}
+.btns{display:flex;gap:10px}
+.btn{flex:1;padding:15px;border:0;border-radius:14px;background:var(--brand);color:#fff;font-size:16px;
+  font-weight:700;cursor:pointer}
+.btn:disabled{background:#dccdd3;cursor:not-allowed}
+.btn.ghost{flex:none;width:56px;background:var(--brand-soft);color:var(--brand)}
+.success{text-align:center;padding:30px 10px}
+.success .ic{width:78px;height:78px;border-radius:50%;background:var(--ok);color:#fff;margin:10px auto 18px;
+  display:flex;align-items:center;justify-content:center;font-size:40px}
+.success h2{font-size:22px;margin-bottom:6px}
+.success p{color:var(--muted);font-size:14px;margin:0 0 6px}
+.fade{animation:f .2s ease}
+@keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="salonName"></h1>
+  <p id="tagline"></p>
+  <div class="progress" id="progress"></div>
+</header>
+<main id="app"></main>
+<div class="bar" id="bar"></div>
+
+<script>
+/* ====== SOZLAMALAR: har bir salon uchun shu yerni o'zgartiring ====== */
+const CONFIG = {
+  salon: "Salon nomi",
+  tagline: "Onlayn navbat — Telegramdan chiqmasdan",
+  open: 9, close: 19, step: 30,   // ish vaqti (soat) va slot qadami (daqiqa)
+  offDays: [0],                   // dam olish kunlari (0 = yakshanba)
+  days: 14                        // necha kunga oldindan yozilish mumkin
+};
+const SERVICES = [
+  { cat: "Makiyaj", id: "mk1", name: "Kunduzgi makiyaj", min: 60,  price: 150000 },
+  { cat: "Makiyaj", id: "mk2", name: "Kechki makiyaj",   min: 90,  price: 250000 },
+  { cat: "Makiyaj", id: "mk3", name: "Kelin makiyaji",   min: 120, price: 600000 },
+  { cat: "Manikyur", id: "mn1", name: "Klassik manikyur", min: 60, price: 80000 },
+  { cat: "Manikyur", id: "mn2", name: "Gel-lak",          min: 90, price: 120000 },
+  { cat: "Manikyur", id: "mn3", name: "Pedikyur",         min: 60, price: 130000 },
+  { cat: "Soch turmagi", id: "st1", name: "Kundalik turmak", min: 60,  price: 120000 },
+  { cat: "Soch turmagi", id: "st2", name: "Kechki turmak",   min: 90,  price: 220000 },
+  { cat: "Soch turmagi", id: "st3", name: "Kelin turmagi",   min: 120, price: 500000 }
+];
+const MASTERS = [
+  { id: "m1", name: "Malika",  role: "Vizajist, stilist",    cats: ["Makiyaj", "Soch turmagi"] },
+  { id: "m2", name: "Dilnoza", role: "Manikyur ustasi",      cats: ["Manikyur"] },
+  { id: "m3", name: "Sevara",  role: "Universal usta",       cats: ["Makiyaj", "Manikyur", "Soch turmagi"] }
+];
+/* =================================================================== */
+
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor("#c2185b"); } catch (e) {} }
+
+const MONTHS = ["yan","fev","mar","apr","may","iyn","iyl","avg","sen","okt","noy","dek"];
+const WEEKDAYS = ["Yak","Dush","Sesh","Chor","Pay","Jum","Shan"];
+const STEPS = ["Xizmat", "Usta", "Vaqt", "Tasdiq"];
+
+const S = { step: 0, services: new Set(), master: null, date: null, time: null, name: "", phone: "", done: false };
+const bookings = []; // {m, date, start, dur}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm";
+const pad = n => String(n).padStart(2, "0");
+const hhmm = m => pad(Math.floor(m / 60)) + ":" + pad(m % 60);
+const dkey = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+
+const chosen = () => SERVICES.filter(s => S.services.has(s.id));
+const totalMin = () => chosen().reduce((a, s) => a + s.min, 0);
+const totalPrice = () => chosen().reduce((a, s) => a + s.price, 0);
+const needCats = () => [...new Set(chosen().map(s => s.cat))];
+const eligible = () => MASTERS.filter(m => needCats().every(c => m.cats.includes(c)));
+
+function dates() {
+  const out = []; const base = new Date(); base.setHours(0, 0, 0, 0);
+  for (let i = 0; i < CONFIG.days; i++) { const d = new Date(base); d.setDate(base.getDate() + i); out.push(d); }
+  return out;
+}
+function hash(str) { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; }
+
+// Demo uchun: ba'zi vaqtlar "band" deb ko'rsatiladi. Haqiqiy ilovada bu server/bazadan keladi.
+function masterFree(mid, date, start, dur) {
+  for (let t = start; t < start + dur; t += CONFIG.step) {
+    if (hash(mid + date + t) % 100 < 28) return false;
+  }
+  return !bookings.some(b => b.m === mid && b.date === date && start < b.start + b.dur && start + dur > b.start);
+}
+function pickMaster(date, start, dur) {
+  const list = S.master === "any" ? eligible() : MASTERS.filter(m => m.id === S.master);
+  return list.find(m => masterFree(m.id, date, start, dur)) || null;
+}
+function slotList() {
+  const dur = totalMin(); const res = [];
+  const now = new Date(); const isToday = S.date === dkey(now);
+  const nowMin = now.getHours() * 60 + now.getMinutes() + 60;
+  for (let t = CONFIG.open * 60; t + dur <= CONFIG.close * 60; t += CONFIG.step) {
+    const past = isToday && t < nowMin;
+    res.push({ t, free: !past && !!pickMaster(S.date, t, dur) });
+  }
+  return res;
+}
+
+/* ---------- Ko'rinishlar ---------- */
+function viewServices() {
+  let html = "<h2>Qaysi xizmat kerak?</h2>";
+  let last = "";
+  SERVICES.forEach(s => {
+    if (s.cat !== last) { html += `<div class="cat">${esc(s.cat)}</div>`; last = s.cat; }
+    const sel = S.services.has(s.id);
+    html += `<div class="item ${sel ? "sel" : ""}" data-act="svc" data-id="${s.id}">
+      <div class="check">${sel ? "✓" : ""}</div>
+      <div class="info"><div class="name">${esc(s.name)}</div><div class="sub">${s.min} daqiqa</div></div>
+      <div class="price">${money(s.price)}</div></div>`;
+  });
+  return html;
+}
+function viewMasters() {
+  let html = "<h2>Ustani tanlang</h2>";
+  html += `<div class="item ${S.master === "any" ? "sel" : ""}" data-act="master" data-id="any">
+    <div class="avatar any">★</div>
+    <div class="info"><div class="name">Farqi yo'q</div><div class="sub">Bo'sh turgan ustani biz tanlaymiz</div></div>
+    <div class="check">${S.master === "any" ? "✓" : ""}</div></div>`;
+  eligible().forEach(m => {
+    const sel = S.master === m.id;
+    html += `<div class="item ${sel ? "sel" : ""}" data-act="master" data-id="${m.id}">
+      <div class="avatar">${esc(m.name[0])}</div>
+      <div class="info"><div class="name">${esc(m.name)}</div><div class="sub">${esc(m.role)}</div></div>
+      <div class="check">${sel ? "✓" : ""}</div></div>`;
+  });
+  return html;
+}
+function viewTime() {
+  let html = "<h2>Sana va vaqtni tanlang</h2><div class='dates'>";
+  dates().forEach(d => {
+    const k = dkey(d); const off = CONFIG.offDays.includes(d.getDay());
+    html += `<div class="date ${S.date === k ? "sel" : ""} ${off ? "off" : ""}" data-act="date" data-id="${k}">
+      <small>${WEEKDAYS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MONTHS[d.getMonth()]}</small></div>`;
+  });
+  html += "</div>";
+  if (!S.date) return html + `<div class="empty">Avval sanani tanlang</div>`;
+  const list = slotList();
+  if (!list.some(x => x.free)) return html + `<div class="empty">Bu kunga bo'sh vaqt yo'q. Boshqa kunni tanlang.</div>`;
+  html += `<div class="cat">Bo'sh vaqtlar</div><div class="slots">`;
+  list.forEach(x => {
+    html += `<div class="slot ${x.free ? "" : "busy"} ${S.time === x.t ? "sel" : ""}" data-act="time" data-id="${x.t}">${hhmm(x.t)}</div>`;
+  });
+  return html + "</div>";
+}
+function dateLabel() {
+  if (!S.date) return "";
+  const [y, m, d] = S.date.split("-").map(Number); const dt = new Date(y, m - 1, d);
+  return `${d} ${MONTHS[m - 1]}, ${WEEKDAYS[dt.getDay()]}`;
+}
+function masterName() {
+  if (S.master === "any") { const m = pickMaster(S.date, S.time, totalMin()); return m ? m.name : "—"; }
+  const m = MASTERS.find(x => x.id === S.master); return m ? m.name : "—";
+}
+function viewConfirm() {
+  const svc = chosen().map(s => esc(s.name)).join(", ");
+  return `<h2>Ma'lumotlaringiz</h2>
+    <label>Ismingiz</label>
+    <input class="field" id="inName" type="text" autocomplete="name" placeholder="Ismingizni kiriting" value="${esc(S.name)}">
+    <label>Telefon raqamingiz</label>
+    <div class="phone"><span>+998</span>
+      <input id="inPhone" type="tel" inputmode="numeric" placeholder="90 123 45 67" value="${esc(fmtPhone(S.phone))}"></div>
+    <div class="summary">
+      <div class="row"><span>Xizmat</span><span>${svc}</span></div>
+      <div class="row"><span>Usta</span><span>${esc(masterName())}</span></div>
+      <div class="row"><span>Sana</span><span>${esc(dateLabel())}</span></div>
+      <div class="row"><span>Vaqt</span><span>${hhmm(S.time)} – ${hhmm(S.time + totalMin())}</span></div>
+      <div class="row"><span>Jami</span><span>${money(totalPrice())}</span></div>
+    </div>`;
+}
+function viewDone() {
+  return `<div class="success"><div class="ic">✓</div><h2>Navbatingiz qabul qilindi!</h2>
+    <p>${esc(dateLabel())}, ${hhmm(S.time)}</p><p>Usta: ${esc(S.doneMaster || "")}</p>
+    <p style="margin-top:14px">Salon administratori siz bilan zarurat bo'lsa bog'lanadi.</p></div>`;
+}
+function fmtPhone(d) {
+  d = d.replace(/\D/g, "").slice(0, 9);
+  const p = [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean);
+  return p.join(" ");
+}
+
+/* ---------- Chizish ---------- */
+function canNext() {
+  if (S.step === 0) return S.services.size > 0;
+  if (S.step === 1) return !!S.master;
+  if (S.step === 2) return !!S.date && S.time !== null;
+  return S.name.trim().length >= 2 && S.phone.replace(/\D/g, "").length === 9;
+}
+function renderBar() {
+  const bar = $("#bar");
+  if (S.done) { bar.style.display = "none"; return; }
+  bar.style.display = "";
+  const tot = S.services.size
+    ? `<div class="tot"><span>${chosen().length} ta xizmat · ${totalMin()} daqiqa</span><b>${money(totalPrice())}</b></div>`
+    : `<div class="tot"><span>Xizmatni tanlang</span></div>`;
+  const last = S.step === 3;
+  bar.innerHTML = tot + `<div class="btns">` +
+    (S.step > 0 ? `<button class="btn ghost" data-act="back">←</button>` : "") +
+    `<button class="btn" id="next" data-act="next" ${canNext() ? "" : "disabled"}>${last ? "Navbatga yozilish" : "Davom etish"}</button></div>`;
+}
+function render() {
+  $("#salonName").textContent = CONFIG.salon;
+  $("#tagline").textContent = CONFIG.tagline;
+  $("#progress").innerHTML = STEPS.map((_, i) => `<i class="${i <= S.step || S.done ? "on" : ""}"></i>`).join("");
+  const app = $("#app");
+  app.innerHTML = `<div class="fade">${S.done ? viewDone() : [viewServices, viewMasters, viewTime, viewConfirm][S.step]()}</div>`;
+  renderBar();
+  window.scrollTo(0, 0);
+}
+function rerenderKeepScroll() { const y = window.scrollY; render(); window.scrollTo(0, y); }
+
+/* ---------- Hodisalar ---------- */
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const act = el.dataset.act, id = el.dataset.id;
+  if (act === "svc") {
+    S.services.has(id) ? S.services.delete(id) : S.services.add(id);
+    if (S.master && S.master !== "any" && !eligible().some(m => m.id === S.master)) S.master = null;
+    S.time = null; rerenderKeepScroll();
+  } else if (act === "master") { S.master = id; S.time = null; rerenderKeepScroll(); }
+  else if (act === "date") { S.date = id; S.time = null; rerenderKeepScroll(); }
+  else if (act === "time") { S.time = Number(id); rerenderKeepScroll(); }
+  else if (act === "back") { S.step = Math.max(0, S.step - 1); render(); }
+  else if (act === "next") { if (canNext()) { S.step === 3 ? submit() : (S.step++, render()); } }
+  if (tg && tg.HapticFeedback) { try { tg.HapticFeedback.selectionChanged(); } catch (_) {} }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "inName") S.name = e.target.value;
+  if (e.target.id === "inPhone") {
+    S.phone = e.target.value.replace(/\D/g, "").slice(0, 9);
+    e.target.value = fmtPhone(S.phone);
+  }
+  if (e.target.id === "inName" || e.target.id === "inPhone") {
+    const b = $("#next"); if (b) b.disabled = !canNext();
+  }
+});
+
+function submit() {
+  const dur = totalMin();
+  const m = pickMaster(S.date, S.time, dur);
+  if (!m) { alert("Kechirasiz, bu vaqt band bo'lib qoldi. Boshqa vaqtni tanlang."); S.step = 2; S.time = null; render(); return; }
+  const payload = {
+    type: "booking",
+    services: chosen().map(s => ({ id: s.id, name: s.name })),
+    master: { id: m.id, name: m.name },
+    date: S.date, time: hhmm(S.time), duration_min: dur, total: totalPrice(),
+    client: { name: S.name.trim(), phone: "+998" + S.phone }
+  };
+  bookings.push({ m: m.id, date: S.date, start: S.time, dur });
+  S.doneMaster = m.name; S.done = true; render();
+  // Telegram ichida ochilgan bo'lsa, ma'lumot botga yuboriladi (ilova yopiladi)
+  if (tg && tg.initData) { try { tg.sendData(JSON.stringify(payload)); } catch (e) { console.log(payload); } }
+  else console.log("Bron (demo):", payload);
+}
+
+render();
+</script>
+</body>
+</html>
